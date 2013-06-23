@@ -5,6 +5,7 @@ use v5.10;
 use Moo;
 use PerlX::Maybe;
 
+use File::Spec;
 use File::Basename 'basename';
 use Getopt::Long::Descriptive;
 
@@ -174,15 +175,17 @@ sub run {
         exit 0;
     }
 
+    my %data = ();
     foreach my $node ( @{ $self->nodes } ) {
-        $self->work_node($node);
+        $self->analyze_node( \%data, $node );
     }
 
     return 1;
 }
 
-sub work_node {
+sub analyze_node {
     my $self = shift;
+    my $data = shift;
     my $node = shift;
 
     if ( -d $node ) {
@@ -195,7 +198,7 @@ sub work_node {
         closedir $dh or die "Error: can't closedir '$node': $!\n";
 
         foreach my $inner (@innernodes) {
-            $self->work_node($inner);
+            $self->analyze_node( $data, $inner );
         }
 
         $self->verbose && print "<< Leaving $node\n";
@@ -243,14 +246,14 @@ sub work_node {
             }
         }
 
-        my %data = ();
         # aliases go first, actual tag names get priority after
+        my $path = File::Spec->rel2abs($node);
         foreach my $alias ( keys %tag_alias ) {
-            exists $+{$alias} and $data{ uc $tag_alias{$alias} } = $+{$alias};
+            exists $+{$alias} and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
         }
 
         foreach my $tag ( @{ $self->tags } ) {
-            exists $+{$tag} and $data{ uc $tag } = $+{$tag};
+            exists $+{$tag} and $data->{$path}{ uc $tag } = $+{$tag};
         }
 
         $self->writer->add_id3( $self->strip, $node, %data );
