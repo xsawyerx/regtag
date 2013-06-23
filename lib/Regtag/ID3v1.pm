@@ -4,6 +4,8 @@ package Regtag::ID3v1;
 use Moo;
 use MP3::Mplib;
 
+use DDP;
+
 sub show_tags {
     print << '_TAGS';
 The following tags are supported by name and alias(es):
