@@ -105,14 +105,15 @@ sub new_with_options {
         [ 'help|h'        => 'print usage message and exit'        ],
     );
 
-    if ( @ARGV == 0 ) {
+    if ( @ARGV == 0 && ! $opt->tags ) {
         print $usage->text;
         exit 0;
     }
 
     # if it's 0, we just print help
+    # if it's 1, it can only be --tags
     # if it's 2, we already have the minimum
-    if ( @ARGV > 0 && @ARGV < 2 ) {
+    if ( @ARGV > 0 && @ARGV < 2 && ! $opt->tags ) {
         $usage->die( {
             pre_text => "Error: must provide regex and files or directories\n\n"
         } );
