@@ -1,4 +1,4 @@
-package Regtag;
+package App::Regtag;
 # ABSTRACT: Tag MP3s using regular expression awesomesaucehoodness
 
 use v5.10;
@@ -8,7 +8,7 @@ use PerlX::Maybe;
 use File::Basename 'basename';
 use Getopt::Long::Descriptive;
 
-use Regtag::ID3v1;
+use App::Regtag::ID3v1;
 use DDP;
 
 # options
@@ -155,9 +155,9 @@ sub _build_writer {
 
     my $writer;
     if ( $self->idtag_version eq 'v1' ) {
-        $writer = Regtag::ID3v1->new;
+        $writer = App::Regtag::ID3v1->new;
     } elsif ( $self->idtag_version eq 'v2' ) {
-        $writer = Regtag::ID3v2->new;
+        $writer = App::Regtag::ID3v2->new;
     } else {
         die "Unknown ID3 tag version: " . $self->idtag_version . "\n";
     }

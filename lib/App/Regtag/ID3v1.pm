@@ -1,4 +1,4 @@
-package Regtag::ID3v1;
+package App::Regtag::ID3v1;
 # ABSTRACT: Write ID3v1 tags
 
 use Moo;

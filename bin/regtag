@@ -2,6 +2,6 @@
 use strict;
 use warnings;
 
-use Regtag;
+use App::Regtag;
 
-exit Regtag->new_with_options->run;
+exit App::Regtag->new_with_options->run;
