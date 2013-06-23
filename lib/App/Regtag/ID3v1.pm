@@ -6,6 +6,20 @@ use MP3::Mplib;
 
 use DDP;
 
+has tags => (
+    is      => 'ro',
+    default => sub { [ qw<title artist album track year type comment> ] },
+);
+
+has tag_alias => (
+    is      => 'ro',
+    default => sub { {
+        name   => 'title',
+        genre  => 'type',
+        number => 'track',
+    } },
+);
+
 sub show_tags {
     print << '_TAGS';
 The following tags are supported by name and alias(es):

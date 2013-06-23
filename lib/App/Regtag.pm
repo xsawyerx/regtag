@@ -59,22 +59,6 @@ has nodes => (
     required => 1,
 );
 
-# variables
-has tags => (
-    is      => 'ro',
-    default => sub { [ qw<title artist album track year type comment> ] },
-);
-
-# TODO: reverse these to allow multiple aliases?
-has tag_alias => (
-    is      => 'ro',
-    default => sub { {
-        name   => 'title',
-        genre  => 'type',
-        number => 'track',
-    } },
-);
-
 has regex => (
     is      => 'ro',
     lazy    => 1,
@@ -181,13 +165,16 @@ sub run {
         $self->analyze_node( \%data, $node );
     }
 
+    $writer->run(\%data);
+
     return 1;
 }
 
 sub analyze_node {
-    my $self = shift;
-    my $data = shift;
-    my $node = shift;
+    my $self   = shift;
+    my $data   = shift;
+    my $node   = shift;
+    my $writer = $self->writer;
 
     if ( -d $node ) {
         $self->verbose && print ">> Recursing into $node\n";
@@ -237,8 +224,8 @@ sub analyze_node {
             print "> }\n";
         }
 
-        my %tag_alias = %{ $self->tag_alias };
         # check if matched contradictory aliased keys
+        my %tag_alias = %{ $writer->tag_alias };
         foreach my $alias ( keys %tag_alias ) {
             my $tag = $tag_alias{$alias};
             if ( exists $+{$alias} && exists $+{$tag} ) {
@@ -254,7 +241,7 @@ sub analyze_node {
                 and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
         }
 
-        foreach my $tag ( @{ $self->tags } ) {
+        foreach my $tag ( @{ $writer->tags } ) {
             exists $+{$tag}
                 and $data->{$path}{ uc $tag } = $+{$tag};
         }
