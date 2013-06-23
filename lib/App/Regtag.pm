@@ -177,6 +177,8 @@ sub run {
     foreach my $node ( @{ $self->nodes } ) {
         $self->work_node($node);
     }
+
+    return 1;
 }
 
 sub work_node {
