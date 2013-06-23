@@ -8,6 +8,7 @@ use PerlX::Maybe;
 use File::Basename 'basename';
 use Getopt::Long::Descriptive;
 
+use Regtag::ID3v1;
 use DDP;
 
 # options
