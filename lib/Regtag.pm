@@ -86,8 +86,9 @@ has writer => (
     builder => '_build_writer',
 );
 
-sub BUILDARGS {
+sub new_with_options {
     my $class = shift;
+
     my ( $opt, $usage ) = describe_options(
         "%c %o <regex> <file|directory> [files...|directories...]",
 
@@ -121,7 +122,7 @@ sub BUILDARGS {
         exit 0;
     }
 
-    return {
+    return $class->new(
         maybe idtag_version => $opt->id,
         maybe expanded      => $opt->expanded,
         maybe ignore_case   => $opt->ignore_case,
@@ -134,7 +135,7 @@ sub BUILDARGS {
 
         regex_string        => shift @ARGV,
         nodes               => \@ARGV,
-    };
+    );
 }
 
 sub _build_regex {
