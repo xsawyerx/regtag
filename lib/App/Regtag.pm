@@ -174,8 +174,6 @@ sub run {
         exit 0;
     }
 
-    my $regex = $self->_build_regex;
-
     foreach my $node ( @{ $self->nodes } ) {
         $self->work_node($node);
     }
