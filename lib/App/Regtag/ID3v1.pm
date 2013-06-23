@@ -3,6 +3,7 @@ package App::Regtag::ID3v1;
 
 use Moo;
 use MP3::Mplib;
+use Text::SimpleTable;
 
 use DDP;
 
@@ -21,22 +22,25 @@ has tag_alias => (
 );
 
 sub show_tags {
-    print << '_TAGS';
-The following tags are supported by name and alias(es):
+    my $self  = shift;
+    my $table = Text::SimpleTable->new(
+        [ 15, 'Capture Name(s)' ],
+        [ 6,  'Alias'           ],
+        [ 22, 'Meaning'         ],
+        [ 9,  'ID3 Frame'       ],
+    );
 
-Capture Name(s)    Alias     Meaning                   ID3 Frame
----------------    -----     -------                   ---------
-?<title>           name      Title                     TIT2
-?<artist>                    Artist                    TPE1
-?<album>                     Album/movie/show          TALB
-?<track>           number    Number/Position in set    TRCK
-?<year>                      Year                      TYER
-?<type>            genre     Genre                     TCON
-?<comment>                   Comments                  COMM
+    $table->row( '?<title>',   'name',   'Title',                  'TIT2' );
+    $table->row( '?<artist>',  '',       'Artist',                 'TPE1' );
+    $table->row( '?<album>',   '',       'Album/movie/show',       'TALB' );
+    $table->row( '?<track>',   'number', 'Number/Position in set', 'TRCK' );
+    $table->row( '?<year>',    '',       'Year',                   'TYER' );
+    $table->row( '?<type>',    'genre',  'Genre',                  'TCON' );
+    $table->row( '?<comment>', '',       'Comments',               'COMM' );
 
-When both capture name and alias are provided, the alias takes
-precedence.
-_TAGS
+    # TODO: doublecheck?
+    print $table->draw, "\n",
+          "When both name and alias are provided, the name take precedence.\n";
 }
 
 sub add_id3 {
