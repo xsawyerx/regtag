@@ -14,7 +14,7 @@ use DDP;
 # options
 has idtag_version => (
     is      => 'ro',
-    default => 'v1',
+    default => sub {'v1'},
 );
 
 has expanded => (
