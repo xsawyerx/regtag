@@ -83,7 +83,7 @@ has regex => (
 has writer => (
     is      => 'ro',
     lazy    => 1,
-    bulider => '_build_writer',
+    builder => '_build_writer',
 );
 
 sub BUILDARGS {
@@ -139,7 +139,7 @@ sub BUILDARGS {
 
 sub _build_regex {
     my $self      = shift;
-    my $regex_str = $self->regex_str;
+    my $regex_str = $self->regex_string;
     my $mods;
 
     $self->expanded    and $mods .= 'x';
@@ -194,7 +194,7 @@ sub work_node {
         closedir $dh or die "Error: can't closedir '$node': $!\n";
 
         foreach my $inner (@innernodes) {
-            work_node($inner);
+            $self->work_node($inner);
         }
 
         $self->verbose && print "<< Leaving $node\n";

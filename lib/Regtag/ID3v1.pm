@@ -1,5 +1,5 @@
-package Regtag::ID3v2;
-# ABSTRACT: Write ID3v2 tags
+package Regtag::ID3v1;
+# ABSTRACT: Write ID3v1 tags
 
 use Moo;
 use MP3::Mplib;
