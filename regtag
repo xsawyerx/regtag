@@ -1,0 +1,199 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use v5.10;
+
+use File::Basename 'basename';
+use Getopt::Long::Descriptive;
+use MP3::Mplib;
+use DDP;
+
+# TODO:
+# provide different writers (v1, v2)
+# give the writers the information, have them check the captures
+# uppercase all keys
+# add transformations for each field ("lc $title")
+# add value for fields in commandline (--fields "album:'still fighting'")
+
+sub add_id3 {
+    my ( $strip, $file, %data ) = @_;
+
+    my $mp3 = MP3::Mplib->new($file);
+
+    if ($strip) {
+        $mp3->del_v1tag;
+        $mp3->del_v2tag;
+    }
+
+    print STDERR "Adding the following to $file\n";
+
+    p %data;
+    if ( ! $mp3->set_v1tag( { %data } ) ) {
+        print 'Error with: ', ( join ', ', keys %data ), "\n";
+    }
+}
+
+my ( $opt, $usage ) = describe_options(
+    "%c %o <regex> <file|directory> [files...|directories...]",
+
+    [ 'expanded|x'    => 'expanded regular expression'         ],
+    [ 'ignore-case|i' => 'case insensitive in the filename'    ],
+    [ 'strip|s'       => 'strip previously existing ID3 tags'  ], # TODO
+    [ 'quiet|q'       => 'less talk, more rock'                ], # TODO
+    [],
+    [ 'tags'          => 'show supported ID3 tags and aliases' ],
+    [ 'verbose|v+'    => 'verbose mode'                        ],
+    [ 'help|h'        => 'print usage message and exit'        ],
+);
+
+if ( $opt->help ) {
+    print $usage->text;
+    exit 0;
+}
+
+if ( $opt->tags ) {
+    print << '_TAGS';
+The following tags are supported by name and alias(es):
+
+Capture Name(s)    Alias     Meaning                   ID3 Frame
+---------------    -----     -------                   ---------
+?<title>           name      Title                     TIT2
+?<artist>                    Artist                    TPE1
+?<album>                     Album/movie/show          TALB
+?<track>           number    Number/Position in set    TRCK
+?<year>                      Year                      TYER
+?<type>            genre     Genre                     TCON
+?<comment>                   Comments                  COMM
+
+When both capture name and alias are provided, the alias takes
+precedence.
+_TAGS
+
+    exit 0;
+}
+
+if ( @ARGV == 0 ) {
+    print $usage->text;
+    exit 0;
+}
+
+# if it's 0, we just print help
+# if it's 2, we already have the minimum
+if ( @ARGV > 0 && @ARGV < 2 ) {
+    $usage->die( {
+        pre_text => "Error: must provide regex and files or directories\n\n"
+    } );
+}
+
+my @tags      = qw<title artist album track year type comment>;
+my %tag_alias = ( # TODO: reverse these to allow multiple aliases?
+    name   => 'title',
+    genre  => 'type',
+    number => 'track',
+);
+
+my ( $raw_regex, @nodes ) = @ARGV;
+
+my $mods;
+$opt->expanded    and $mods .= 'x';
+$opt->ignore_case and $mods .= 'i';
+
+my $regex = $mods ? qr/(?^$mods:)$raw_regex/ : qr/$raw_regex/;
+
+$opt->verbose && print "** Regular expression: /$regex/\n";
+
+sub work_node {
+    my $node = shift;
+
+    if ( -d $node ) {
+        $opt->verbose && print ">> Recursing into $node\n";
+        chdir $node;
+
+        opendir my $dh, '.' or die "Error: can't opendir '$node': $!\n";
+        # ignoring dotfiles, take only mp3s
+        my @innernodes = grep { $_ !~ /^\./ } readdir $dh;
+        closedir $dh or die "Error: can't closedir '$node': $!\n";
+
+        foreach my $inner (@innernodes) {
+            work_node($inner);
+        }
+
+        $opt->verbose && print "<< Leaving $node\n";
+        chdir '..';
+
+        # no more directory work
+        return;
+    }
+
+    # ignore non-mp3 files
+    $node =~ /\.mp3$/i or return;
+
+    if ( ! -e $node ) {
+        warn "!! File '$node' does not exist, ignoring.\n";
+        next;
+    }
+
+    # this should be writable
+    # but only if it's not in dry-run
+    if ( ! -r $node ) {
+        warn "!! File '$node' is not writable, ignoring.\n";
+    }
+
+    # if user provides a full path we strip it to get the basename
+    my $name = basename($node);
+    $opt->verbose && print "++ Parsing $name\n";
+
+    if ( $name =~ $regex ) {
+        if ( $opt->verbose && $opt->verbose >= 2 ) {
+            print "> $node:\n> {\n";
+            foreach my $key ( keys %+ ) {
+                my $value = $+{$key};
+                print ">   '$key': '$value'\n";
+            }
+            print "> }\n";
+        }
+
+        # check if matched contradictory aliased keys
+        foreach my $alias ( keys %tag_alias ) {
+            my $tag = $tag_alias{$alias};
+            if ( exists $+{$alias} && exists $+{$tag} ) {
+                warn "!! Provided and found both '$alias' and '$tag', ",
+                     "using $tag instead\n";
+            }
+        }
+
+        my %data = ();
+        # aliases go first, actual tag names get priority after
+        foreach my $alias ( keys %tag_alias ) {
+            exists $+{$alias} and $data{ uc $tag_alias{$alias} } = $+{$alias};
+        }
+
+        foreach my $tag (@tags) {
+            exists $+{$tag} and $data{ uc $tag } = $+{$tag};
+        }
+
+        add_id3( $opt->strip, $node, %data );
+    }
+}
+
+foreach my $node (@nodes) {
+    work_node($node);
+}
+
+__END__
+
+=head1 SYNOPSIS
+
+    regtag '^(?<composer>\w*)\s+-\s+(?<tracknum>\d{2})\s+-\s+(?<title>.*)$'
+
+    # expanded regex pattern that allows whitespace and comments
+    # equivalent to '/x' modifier in Perl regular expressions
+    regtag -x '^ (?<artist> \w* ) \s+ - \s+ (?<tracknum> \d{2} )...'
+
+=head1 DESCRIPTION
+
+    C<regtag> allows you to use the expressiveness of named captures in
+    regexes (supported in Perl 5.10 and up) to parse mp3 filenames and
+    create ID3 tags for them.
+
