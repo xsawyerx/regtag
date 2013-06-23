@@ -168,7 +168,8 @@ sub _build_writer {
 }
 
 sub run {
-    my $self = shift;
+    my $self   = shift;
+    my $writer = $self->writer;
 
     if ( $self->show_tags ) {
         $writer->show_tags;
