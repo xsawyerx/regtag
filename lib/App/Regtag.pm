@@ -249,14 +249,14 @@ sub analyze_node {
         # aliases go first, actual tag names get priority after
         my $path = File::Spec->rel2abs($node);
         foreach my $alias ( keys %tag_alias ) {
-            exists $+{$alias} and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
+            exists $+{$alias}
+                and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
         }
 
         foreach my $tag ( @{ $self->tags } ) {
-            exists $+{$tag} and $data->{$path}{ uc $tag } = $+{$tag};
+            exists $+{$tag}
+                and $data->{$path}{ uc $tag } = $+{$tag};
         }
-
-        $self->writer->add_id3( $self->strip, $node, %data );
     }
 }
 
