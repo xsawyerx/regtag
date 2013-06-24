@@ -7,6 +7,7 @@ use PerlX::Maybe;
 
 use File::Spec;
 use File::Basename 'basename';
+use Text::SimpleTable;
 use Getopt::Long::Descriptive;
 
 use App::Regtag::ID3v1;

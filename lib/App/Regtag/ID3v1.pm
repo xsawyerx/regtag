@@ -21,6 +21,30 @@ has tag_alias => (
     } },
 );
 
+sub run {
+    my $self = shift;
+    my $data = shift;
+
+    $self->ask_for_confirmation($data);
+}
+
+sub ask_for_confirmation {
+    my $self  = shift;
+    my $data  = shift;
+    my $table = Text::SimpleTable->new(
+        [ 30, 'File' ], map { [ length, ucfirst ] } @{ $self->tags }
+    );
+
+    foreach my $file ( keys %{$data} ) {
+        $table->row(
+            "* $file",
+            map { $data->{$file}{ uc $_ } || '' } @{ $self->tags },
+        );
+    }
+
+    print $table->draw;
+}
+
 sub show_tags {
     my $self  = shift;
     my $table = Text::SimpleTable->new(
