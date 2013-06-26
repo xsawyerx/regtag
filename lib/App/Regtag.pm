@@ -78,7 +78,6 @@ sub new_with_options {
         [ 'expanded|x'    => 'expanded regular expression'         ],
         [ 'ignore-case|i' => 'case insensitive in the filename'    ],
         [ 'quiet|q'       => 'less talk, more rock'                ], # TODO
-        [ 'dry-run'       => 'do no harm'                          ], # TODO
         [],
         [ 'tags'          => 'show supported ID3 tags and aliases' ],
         [ 'verbose|v+'    => 'verbose mode'                        ],
@@ -109,7 +108,6 @@ sub new_with_options {
         maybe expanded      => $opt->expanded,
         maybe ignore_case   => $opt->ignore_case,
         maybe quiet         => $opt->quiet,
-        maybe dry_run       => $opt->dry_run,
         maybe show_tags     => $opt->tags,
         maybe verbose       => $opt->verbose,
         maybe help          => $opt->help,
@@ -198,7 +196,6 @@ sub analyze_node {
     }
 
     # this should be writable
-    # but only if it's not in dry-run
     if ( ! -r $node ) {
         warn "!! File '$node' is not writable, ignoring.\n";
     }
