@@ -179,7 +179,6 @@ sub analyze_node {
     my $writer = $self->writer;
 
     if ( -d $node ) {
-        $self->verbose && print ">> Recursing into $node\n";
         chdir $node;
 
         opendir my $dh, '.' or die "Error: can't opendir '$node': $!\n";
@@ -191,7 +190,6 @@ sub analyze_node {
             $self->analyze_node( $data, $inner );
         }
 
-        $self->verbose && print "<< Leaving $node\n";
         chdir '..';
 
         # no more directory work
@@ -214,20 +212,10 @@ sub analyze_node {
 
     # if user provides a full path we strip it to get the basename
     my $name = basename($node);
-    $self->verbose && print "++ Parsing $name\n";
 
     if ( $name !~ $self->regex ) {
         print colored( 'x ', 'red' ), "$name\n";
         return;
-    }
-
-    if ( $self->verbose && $self->verbose >= 2 ) {
-        print "> $node:\n> {\n";
-        foreach my $key ( keys %+ ) {
-            my $value = $+{$key};
-            print ">   '$key': '$value'\n";
-        }
-        print "> }\n";
     }
 
     # check if matched contradictory aliased keys
