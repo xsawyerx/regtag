@@ -60,24 +60,23 @@ sub ask_for_confirmation {
 
 sub show_tags {
     my $self  = shift;
-    my $table = Text::SimpleTable->new(
-        [ 15, 'Capture Name(s)' ],
-        [ 6,  'Alias'           ],
-        [ 22, 'Meaning'         ],
-        [ 9,  'ID3 Frame'       ],
-    );
 
-    $table->row( '?<title>',   'name',   'Title',                  'TIT2' );
-    $table->row( '?<artist>',  '',       'Artist',                 'TPE1' );
-    $table->row( '?<album>',   '',       'Album/movie/show',       'TALB' );
-    $table->row( '?<track>',   'number', 'Number/Position in set', 'TRCK' );
-    $table->row( '?<year>',    '',       'Year',                   'TYER' );
-    $table->row( '?<type>',    'genre',  'Genre',                  'TCON' );
-    $table->row( '?<comment>', '',       'Comments',               'COMM' );
+    print << '_TAGS';
+The following ID3v1 tags are supported by name and alias(es):
 
-    # TODO: doublecheck?
-    print $table->draw, "\n",
-          "When both name and alias are provided, the name take precedence.\n";
+Capture Name(s)    Alias     Meaning                   ID3 Frame
+---------------    -----     -------                   ---------
+?<title>           name      Title                     TIT2
+?<artist>                    Artist                    TPE1
+?<album>                     Album/movie/show          TALB
+?<track>           number    Number/Position in set    TRCK
+?<year>                      Year                      TYER
+?<type>            genre     Genre                     TCON
+?<comment>                   Comments                  COMM
+
+When both name and alias are provided, the name takes precedence.
+_TAGS
+
 }
 
 sub apply_changes {
