@@ -41,6 +41,11 @@ has show_tags => (
     default => sub {0},
 );
 
+has list => (
+    is      => 'ro',
+    default => sub {0},
+);
+
 has verbose => (
     is      => 'ro',
     default => sub {0},
@@ -81,19 +86,20 @@ sub new_with_options {
         [ 'quiet|q'       => 'less talk, more rock'                ], # TODO
         [],
         [ 'tags'          => 'show supported ID3 tags and aliases' ],
+        [ 'list'          => 'list files and if they\'re tagged'   ],
         [ 'verbose|v+'    => 'verbose mode'                        ],
         [ 'help|h'        => 'print usage message and exit'        ],
     );
 
-    if ( @ARGV == 0 && ! $opt->tags ) {
+    if ( @ARGV == 0 && ! $opt->tags && ! $opt->list ) {
         print $usage->text;
         exit 0;
     }
 
     # if it's 0, we just print help
-    # if it's 1, it can only be --tags
+    # if it's 1, it can only be --tags or --list
     # if it's 2, we already have the minimum
-    if ( @ARGV > 0 && @ARGV < 2 && ! $opt->tags ) {
+    if ( @ARGV > 0 && @ARGV < 2 && ! $opt->tags && ! $opt->list ) {
         $usage->die( {
             pre_text => "Error: must provide regex and files or directories\n\n"
         } );
@@ -104,17 +110,24 @@ sub new_with_options {
         exit 0;
     }
 
+    my ( $regex, @nodes );
+    if ( ! $opt->tags && ! $opt->list ) {
+        $regex = shift @ARGV;
+        @nodes = @ARGV;
+    }
+
     return $class->new(
         maybe idtag_version => $opt->id,
         maybe expanded      => $opt->expanded,
         maybe ignore_case   => $opt->ignore_case,
         maybe quiet         => $opt->quiet,
         maybe show_tags     => $opt->tags,
+        maybe list          => $opt->list,
         maybe verbose       => $opt->verbose,
         maybe help          => $opt->help,
 
-        regex_string        => shift @ARGV,
-        nodes               => \@ARGV,
+        regex_string        => $regex,
+        nodes               => \@nodes,
     );
 }
 
@@ -151,6 +164,11 @@ sub run {
 
     if ( $self->show_tags ) {
         $writer->show_tags;
+        exit 0;
+    }
+
+    if ( $self->list ) {
+        $self->list_files( @ARGV ? @ARGV : ('.') );
         exit 0;
     }
 
@@ -211,6 +229,36 @@ sub analyze_node {
         exists $+{$tag}
             and $data->{$path}{ uc $tag } = $+{$tag};
     }
+}
+
+sub list_files {
+    my $self = shift;
+    my @dirs = @_;
+
+    find( sub {
+        -f or return;
+
+        my $file = $_;
+        my $mp3  = MP3::Mplib->new($file);
+
+        my $v1 = $mp3->get_v1tag;
+        my $v2 = $mp3->get_v2tag;
+        my $ex = '';
+
+        if ( keys %{$v1} ) {
+            $ex .= '(v1) ';
+        }
+
+        if ( keys %{$v2} ) {
+            $ex .= '(v2)';
+        }
+
+        $ex and print color 'blue';
+
+        print $file, ( $ex ? " $ex" : '' ), "\n";
+
+        print color 'reset';
+    }, @dirs );
 }
 
 1;
