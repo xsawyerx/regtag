@@ -5,6 +5,7 @@ use v5.10;
 use Moo;
 use PerlX::Maybe;
 
+use File::Find;
 use File::Spec;
 use File::Basename 'basename';
 use Term::ANSIColor;
@@ -154,9 +155,29 @@ sub run {
     }
 
     my %data = ();
-    foreach my $node ( @{ $self->nodes } ) {
+
+    find( sub {
+        -f       or return;
+        /\.mp3$/ or return;
+
+        my $node = $_;
+
+        # this should be writable
+        if ( ! -r $node ) {
+            warn "!! File '$node' is not writable, ignoring.\n";
+            return;
+        }
+
+        # if user provides a full path we strip it to get the basename
+        my $name = basename($node);
+
+        if ( $name !~ $self->regex ) {
+            print colored( 'x ', 'red' ), "$name\n";
+            return;
+        }
+
         $self->analyze_node( \%data, $node );
-    }
+    }, @{ $self->nodes } );
 
     $writer->run(\%data);
 
@@ -168,45 +189,6 @@ sub analyze_node {
     my $data   = shift;
     my $node   = shift;
     my $writer = $self->writer;
-
-    if ( -d $node ) {
-        chdir $node;
-
-        opendir my $dh, '.' or die "Error: can't opendir '$node': $!\n";
-        # ignoring dotfiles, take only mp3s
-        my @innernodes = grep { $_ !~ /^\./ } readdir $dh;
-        closedir $dh or die "Error: can't closedir '$node': $!\n";
-
-        foreach my $inner (@innernodes) {
-            $self->analyze_node( $data, $inner );
-        }
-
-        chdir '..';
-
-        # no more directory work
-        return;
-    }
-
-    # ignore non-mp3 files
-    $node =~ /\.mp3$/i or return;
-
-    if ( ! -e $node ) {
-        warn "!! File '$node' does not exist, ignoring.\n";
-        next;
-    }
-
-    # this should be writable
-    if ( ! -r $node ) {
-        warn "!! File '$node' is not writable, ignoring.\n";
-    }
-
-    # if user provides a full path we strip it to get the basename
-    my $name = basename($node);
-
-    if ( $name !~ $self->regex ) {
-        print colored( 'x ', 'red' ), "$name\n";
-        return;
-    }
 
     # check if matched contradictory aliased keys
     my %tag_alias = %{ $writer->tag_alias };
