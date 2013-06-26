@@ -3,13 +3,14 @@ package App::Regtag::ID3v1;
 
 use Moo;
 use MP3::Mplib;
-use Text::SimpleTable;
+use Term::ANSIColor;
+use IO::Prompt::Tiny 'prompt';
 
 use DDP;
 
 has tags => (
     is      => 'ro',
-    default => sub { [ qw<title artist album track year type comment> ] },
+    default => sub { [ qw<artist title album year track type comment> ] },
 );
 
 has tag_alias => (
@@ -26,23 +27,35 @@ sub run {
     my $data = shift;
 
     $self->ask_for_confirmation($data);
+    $self->apply_changes($data);
 }
 
 sub ask_for_confirmation {
-    my $self  = shift;
-    my $data  = shift;
-    my $table = Text::SimpleTable->new(
-        [ 30, 'File' ], map { [ length, ucfirst ] } @{ $self->tags }
-    );
+    my $self = shift;
+    my $data = shift;
+    my @tags = @{ $self->tags };
 
     foreach my $file ( keys %{$data} ) {
-        $table->row(
-            "* $file",
-            map { $data->{$file}{ uc $_ } || '' } @{ $self->tags },
-        );
+        print colored( '* ', 'green' ), "$file:\n";
+
+        foreach my $tag (@tags) {
+            my $tag_content = $data->{$file}{ uc $tag };
+            defined $tag_content or next;
+
+            printf "  %-7s %s\n",
+                  ( ucfirst $tag ) . ':',
+                  colored( $tag_content, 'blue' );
+        }
     }
 
-    print $table->draw;
+    my $answer = prompt(
+        colored( 'Would you like to apply these tags [y/N]?', 'yellow' )
+    );
+
+    if ( $answer ne 'y' && $answer ne 'Y' ) {
+        print "No changes made.\n";
+        exit;
+    }
 }
 
 sub show_tags {
@@ -67,23 +80,25 @@ sub show_tags {
           "When both name and alias are provided, the name take precedence.\n";
 }
 
-sub add_id3 {
-    my $self                    = shift;
-    my ( $strip, $file, %data ) = @_;
+sub apply_changes {
+    my $self = shift;
+    my $data = shift;
 
-    my $mp3 = MP3::Mplib->new($file);
+    foreach my $file ( keys %{$data} ) {
+        print colored( '* ', 'green' ), "$file ... ";
 
-    # we always strip what we do
-    if ($strip) {
+        my $mp3 = MP3::Mplib->new($file);
+
+        # we always strip what we do
         $mp3->del_v1tag;
         $mp3->del_v2tag;
-    }
 
-    print STDERR "Adding the following to $file\n";
-
-    p %data;
-    if ( ! $mp3->set_v1tag( { %data } ) ) {
-        print 'Error with: ', ( join ', ', keys %data ), "\n";
+        my $tag_data = $data->{$file};
+        if ( $mp3->set_v1tag($tag_data) ) {
+            print '[', colored( 'OK', 'green' ), "]\n";
+        } else {
+            print '[', colored( 'FAIL', 'red' ), "]\n";
+        }
     }
 }
 
