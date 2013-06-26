@@ -7,6 +7,7 @@ use PerlX::Maybe;
 
 use File::Spec;
 use File::Basename 'basename';
+use Term::ANSIColor;
 use Text::SimpleTable;
 use Getopt::Long::Descriptive;
 
@@ -215,37 +216,40 @@ sub analyze_node {
     my $name = basename($node);
     $self->verbose && print "++ Parsing $name\n";
 
-    if ( $name =~ $self->regex ) {
-        if ( $self->verbose && $self->verbose >= 2 ) {
-            print "> $node:\n> {\n";
-            foreach my $key ( keys %+ ) {
-                my $value = $+{$key};
-                print ">   '$key': '$value'\n";
-            }
-            print "> }\n";
-        }
+    if ( $name !~ $self->regex ) {
+        print colored( 'x ', 'red' ), "$name\n";
+        return;
+    }
 
-        # check if matched contradictory aliased keys
-        my %tag_alias = %{ $writer->tag_alias };
-        foreach my $alias ( keys %tag_alias ) {
-            my $tag = $tag_alias{$alias};
-            if ( exists $+{$alias} && exists $+{$tag} ) {
-                warn "!! Provided and found both '$alias' and '$tag', ",
-                     "using $tag instead\n";
-            }
+    if ( $self->verbose && $self->verbose >= 2 ) {
+        print "> $node:\n> {\n";
+        foreach my $key ( keys %+ ) {
+            my $value = $+{$key};
+            print ">   '$key': '$value'\n";
         }
+        print "> }\n";
+    }
 
-        # aliases go first, actual tag names get priority after
-        my $path = File::Spec->rel2abs($node);
-        foreach my $alias ( keys %tag_alias ) {
-            exists $+{$alias}
-                and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
+    # check if matched contradictory aliased keys
+    my %tag_alias = %{ $writer->tag_alias };
+    foreach my $alias ( keys %tag_alias ) {
+        my $tag = $tag_alias{$alias};
+        if ( exists $+{$alias} && exists $+{$tag} ) {
+            warn "!! Provided and found both '$alias' and '$tag', ",
+                 "using $tag instead\n";
         }
+    }
 
-        foreach my $tag ( @{ $writer->tags } ) {
-            exists $+{$tag}
-                and $data->{$path}{ uc $tag } = $+{$tag};
-        }
+    # aliases go first, actual tag names get priority after
+    my $path = File::Spec->rel2abs($node);
+    foreach my $alias ( keys %tag_alias ) {
+        exists $+{$alias}
+            and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
+    }
+
+    foreach my $tag ( @{ $writer->tags } ) {
+        exists $+{$tag}
+            and $data->{$path}{ uc $tag } = $+{$tag};
     }
 }
 
