@@ -240,22 +240,21 @@ sub list_files {
 
         my $file = $_;
         my $mp3  = MP3::Mplib->new($file);
-
-        my $v1 = $mp3->get_v1tag;
-        my $v2 = $mp3->get_v2tag;
-        my $ex = '';
+        my $v1   = $mp3->get_v1tag;
+        my $v2   = $mp3->get_v2tag;
+        my $ext  = '';
 
         if ( keys %{$v1} ) {
-            $ex .= '(v1) ';
+            $ext .= '(v1) ';
         }
 
         if ( keys %{$v2} ) {
-            $ex .= '(v2)';
+            $ext .= '(v2)';
         }
 
-        $ex and print color 'blue';
+        $ext and print color 'blue';
 
-        print $file, ( $ex ? " $ex" : '' ), "\n";
+        print $file, ( $ext ? " $ext" : '' ), "\n";
 
         print color 'reset';
     }, @dirs );
