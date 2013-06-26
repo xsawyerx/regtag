@@ -25,11 +25,6 @@ has expanded => (
     default => sub {0},
 );
 
-has strip => (
-    is      => 'ro',
-    default => sub {0},
-);
-
 has ignore_case => (
     is      => 'ro',
     default => sub {0},
@@ -82,7 +77,6 @@ sub new_with_options {
         [ 'id'            => 'ID3 tag version: v1 (default) or v2' ],
         [ 'expanded|x'    => 'expanded regular expression'         ],
         [ 'ignore-case|i' => 'case insensitive in the filename'    ],
-        [ 'strip-all|s'   => 'strip previously existing ID3 tags'  ], # TODO
         [ 'quiet|q'       => 'less talk, more rock'                ], # TODO
         [ 'dry-run'       => 'do no harm'                          ], # TODO
         [],
@@ -114,7 +108,6 @@ sub new_with_options {
         maybe idtag_version => $opt->id,
         maybe expanded      => $opt->expanded,
         maybe ignore_case   => $opt->ignore_case,
-        maybe strip         => $opt->strip_all,
         maybe quiet         => $opt->quiet,
         maybe dry_run       => $opt->dry_run,
         maybe show_tags     => $opt->tags,
