@@ -65,7 +65,7 @@ sub execute {
         }
     }
 
-    my $writer = $self->app->_build_writer($opt);
+    my $writer = $self->app->_build_writer;
     my %data   = ();
 
     find( sub {
