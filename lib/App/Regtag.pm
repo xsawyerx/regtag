@@ -30,6 +30,11 @@ has ignore_case => (
     default => sub {0},
 );
 
+has defines => (
+    is      => 'ro',
+    default => sub {{}},
+);
+
 has quiet => (
     is      => 'ro',
     default => sub {0},
@@ -79,10 +84,11 @@ sub new_with_options {
     my ( $opt, $usage ) = describe_options(
         "%c %o <regex> <file|directory> [files...|directories...]",
 
-        [ 'id'            => 'ID3 tag version: v1 (default) or v2' ],
-        [ 'expanded|x'    => 'expanded regular expression'         ],
-        [ 'ignore-case|i' => 'case insensitive in the filename'    ],
-        [ 'quiet|q'       => 'less talk, more rock'                ], # TODO
+        [ 'id'            => 'ID3 tag version: v1 (default) or v2'  ],
+        [ 'expanded|x'    => 'expanded regular expression'          ],
+        [ 'ignore-case|i' => 'case insensitive in the filename'     ],
+        [ 'define=s'      => 'define specific variables statically' ],
+        [ 'quiet|q'       => 'less talk, more rock'                 ], # TODO
         [],
         [ 'tags'          => 'show supported ID3 tags and aliases' ],
         [ 'list'          => 'list files and if they\'re tagged'   ],
@@ -115,6 +121,16 @@ sub new_with_options {
         @nodes = @ARGV;
     }
 
+    my %defines = ();
+    if ( my $define = $opt->define ) {
+        foreach my $pair ( split ',', $define ) {
+            my ( $key, $value ) = split '=', $pair;
+            # remove quotations?
+            $value =~ s/^['"](.+)['"]$/$1/;
+            $defines{$key} = $value;
+        }
+    }
+
     return $class->new(
         maybe idtag_version => $opt->id,
         maybe expanded      => $opt->expanded,
@@ -125,6 +141,7 @@ sub new_with_options {
         maybe verbose       => $opt->verbose,
         maybe help          => $opt->help,
 
+        defines             => \%defines,
         regex_string        => $regex,
         nodes               => \@nodes,
     );
@@ -207,11 +224,20 @@ sub analyze_node {
     my $node   = shift;
     my $writer = $self->writer;
 
+    # copy stuff to a rw hash so we can add stuff
+    my %cap_tags = %+;
+
+    # add possible definitions
+    foreach my $key ( keys %{ $self->defines } ) {
+        my $value = $self->defines->{$key};
+        $cap_tags{$key} = $value;
+    }
+
     # check if matched contradictory aliased keys
     my %tag_alias = %{ $writer->tag_alias };
     foreach my $alias ( keys %tag_alias ) {
         my $tag = $tag_alias{$alias};
-        if ( exists $+{$alias} && exists $+{$tag} ) {
+        if ( exists $cap_tags{$alias} && exists $cap_tags{$tag} ) {
             warn "!! Provided and found both '$alias' and '$tag', ",
                  "using $tag instead\n";
         }
@@ -220,13 +246,14 @@ sub analyze_node {
     # aliases go first, actual tag names get priority after
     my $path = File::Spec->rel2abs($node);
     foreach my $alias ( keys %tag_alias ) {
-        exists $+{$alias}
-            and $data->{$path}{ uc $tag_alias{$alias} } = $+{$alias};
+        exists $cap_tags{$alias}
+            and $data->{$path}{ uc $tag_alias{$alias} } = $cap_tags{$alias};
     }
 
+    # now the actual tag names
     foreach my $tag ( @{ $writer->tags } ) {
-        exists $+{$tag}
-            and $data->{$path}{ uc $tag } = $+{$tag};
+        exists $cap_tags{$tag}
+            and $data->{$path}{ uc $tag } = $cap_tags{$tag};
     }
 }
 
