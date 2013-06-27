@@ -9,7 +9,6 @@ use File::Find;
 use File::Spec;
 use File::Basename 'basename';
 use Term::ANSIColor;
-use Text::SimpleTable;
 use Getopt::Long::Descriptive;
 
 use App::Regtag::ID3v1;
