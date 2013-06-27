@@ -6,8 +6,6 @@ use MP3::Mplib;
 use Term::ANSIColor;
 use IO::Prompt::Tiny 'prompt';
 
-use DDP;
-
 has tags => (
     is      => 'ro',
     default => sub { [ qw<artist title album year track type comment> ] },

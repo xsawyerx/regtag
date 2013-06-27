@@ -4,4 +4,4 @@ use warnings;
 
 use App::Regtag;
 
-exit App::Regtag->new_with_options->run;
+exit App::Regtag->run;
