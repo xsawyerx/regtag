@@ -67,7 +67,7 @@ sub apply_changes {
         $mp3->del_v1tag;
         $mp3->del_v2tag;
 
-        my ($version) = __PACKAGE__ =~ /^App::Regtag::ID3v(1|2)$/;
+        my ($version) = ref($self) =~ /^App::Regtag::ID3v(1|2)$/;
         my $method    = "set_v${version}tag";
         my $tag_data  = $data->{$file};
         if ( $mp3->$method($tag_data) ) {
