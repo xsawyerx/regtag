@@ -5,11 +5,13 @@ use Moo;
 
 with 'App::Regtag::Role::ID3';
 
-has '+tags' => (
+has 'tags' => (
+    is => 'ro',
     default => sub { [ qw<artist title album year track type comment> ] },
 );
 
-has '+tag_alias' => (
+has 'tag_alias' => (
+    is => 'ro',
     default => sub { {
         name   => 'title',
         genre  => 'type',

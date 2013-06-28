@@ -6,15 +6,15 @@ use MP3::Mplib;
 use Term::ANSIColor;
 use IO::Prompt::Tiny 'prompt';
 
-has tags => (
-    is       => 'ro',
-    required => 1,
-);
-
-has tag_alias => (
-    is      => 'ro',
-    default => sub { {} },
-);
+#has tags => (
+#    is       => 'ro',
+#    required => 1,
+#);
+#
+#has tag_alias => (
+#    is      => 'ro',
+#    default => sub { {} },
+#);
 
 requires 'show_tags';
 

@@ -3,11 +3,13 @@ package App::Regtag::ID3v2;
 
 use Moo;
 
-has '+tags' => (
+has 'tags' => (
+    is => 'ro',
     default => sub { [ qw<> ] },
 );
 
-has '+tag_alias' => (
+has 'tag_alias' => (
+    is => 'ro',
     default => sub { {} },
 );
 
