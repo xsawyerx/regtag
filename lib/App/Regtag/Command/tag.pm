@@ -59,8 +59,6 @@ sub execute {
     if ( my $define = $opt->{'define'} ) {
         foreach my $pair ( split ',', $define ) {
             my ( $key, $value ) = split '=', $pair;
-            # remove quotations?
-            $value =~ s/^['"](.+)['"]$/$1/;
             $defines{$key} = $value;
         }
     }
