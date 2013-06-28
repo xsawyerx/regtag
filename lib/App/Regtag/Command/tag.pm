@@ -27,6 +27,8 @@ sub _build_regex {
 
 sub opt_spec {
     return (
+        [ 'v1'            => 'work on v1 (default)'                 ],
+        [ 'v2'            => 'work on v2'                           ],
         [ 'expanded|x'    => 'expanded regular expression'          ],
         [ 'ignore-case|i' => 'case insensitive in the filename'     ],
         [ 'define=s'      => 'define specific variables statically' ],
@@ -45,6 +47,9 @@ sub validate_args {
     } catch {
         $self->usage_error("Bad regex: $_");
     };
+
+    ( exists $opt->{'v1'} ) || ( exists $opt->{'v2'} )
+        or $opt->{'v1'} = 1;
 }
 
 sub execute {
@@ -89,7 +94,7 @@ sub execute {
         $self->analyze_node( $opt, \%data, \%defines, $node );
     }, @nodes );
 
-    $writer->run(\%data);
+    $writer->run( $opt, \%data );
 }
 
 sub analyze_node {
@@ -109,25 +114,10 @@ sub analyze_node {
         $cap_tags{$key} = $value;
     }
 
-    # check if matched contradictory aliased keys
-    my %tag_alias = %{ $writer->tag_alias };
-    foreach my $alias ( keys %tag_alias ) {
-        my $tag = $tag_alias{$alias};
-        if ( exists $cap_tags{$alias} && exists $cap_tags{$tag} ) {
-            warn "!! Provided and found both '$alias' and '$tag', ",
-                 "using $tag instead\n";
-        }
-    }
-
-    # aliases go first, actual tag names get priority after
     my $path = File::Spec->rel2abs($node);
-    foreach my $alias ( keys %tag_alias ) {
-        exists $cap_tags{$alias}
-            and $data->{$path}{ uc $tag_alias{$alias} } = $cap_tags{$alias};
-    }
 
     # now the actual tag names
-    foreach my $tag ( @{ $writer->tags } ) {
+    foreach my $tag ( keys %{ $writer->tags } ) {
         exists $cap_tags{$tag}
             and $data->{$path}{ uc $tag } = $cap_tags{$tag};
     }
