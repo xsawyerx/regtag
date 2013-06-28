@@ -86,25 +86,26 @@ sub execute {
             return;
         }
 
-        $self->analyze_node( $opt, \%data, $node );
+        $self->analyze_node( $opt, \%data, \%defines, $node );
     }, @nodes );
 
     $writer->run(\%data);
 }
 
 sub analyze_node {
-    my $self   = shift;
-    my $opt    = shift;
-    my $data   = shift;
-    my $node   = shift;
-    my $writer = $self->app->_build_writer;
+    my $self    = shift;
+    my $opt     = shift;
+    my $data    = shift;
+    my $defines = shift;
+    my $node    = shift;
+    my $writer  = $self->app->_build_writer;
 
     # copy stuff to a rw hash so we can add stuff
     my %cap_tags = %+;
 
     # add possible definitions
-    foreach my $key ( keys %{ $opt->{'defines'} } ) {
-        my $value = $self->defines->{$key};
+    foreach my $key ( keys %{$defines} ) {
+        my $value = $defines->{$key};
         $cap_tags{$key} = $value;
     }
 
