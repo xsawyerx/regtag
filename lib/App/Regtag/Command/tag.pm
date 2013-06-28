@@ -16,12 +16,12 @@ sub _build_regex {
     my $self      = shift;
     my $opt       = shift;
     my $regex_str = shift;
-    my $mods;
+    my $mods      = 'u'; # TODO: research this a bit
 
     $opt->{'expanded'}    and $mods .= 'x';
     $opt->{'ignore_case'} and $mods .= 'i';
 
-    my $regex = $mods ? qr/(?^$mods:)$regex_str/ : qr/$regex_str/;
+    my $regex = qr/(?^$mods:$regex_str)/;
     return $regex;
 }
 
