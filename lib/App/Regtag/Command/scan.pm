@@ -16,6 +16,8 @@ sub execute {
     find( sub {
         -f or return;
 
+        $_ =~ /\.mp3$/i or next;
+
         my $file = $_;
         my $mp3  = MP3::Mplib->new($file);
         my %v1   = %{ $mp3->get_v1tag };

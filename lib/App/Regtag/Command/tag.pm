@@ -72,8 +72,8 @@ sub execute {
     my %data   = ();
 
     find( sub {
-        -f       or return;
-        /\.mp3$/ or return;
+        -f        or return;
+        /\.mp3$/i or return;
 
         my $node = $_;
 
