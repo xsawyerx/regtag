@@ -10,6 +10,7 @@ use Try::Tiny;
 use File::Find;
 use File::Spec;
 use File::Basename;
+use Eval::Closure;
 use Term::ANSIColor;
 
 sub _build_regex {
@@ -32,6 +33,7 @@ sub opt_spec {
         [ 'expanded|x'    => 'expanded regular expression'          ],
         [ 'ignore-case|i' => 'case insensitive in the filename'     ],
         [ 'define=s'      => 'define specific variables statically' ],
+        [ 'transform|t=s' => 'tranform captured chunks with code'   ],
     );
 }
 
@@ -120,6 +122,46 @@ sub analyze_node {
     foreach my $tag ( keys %{ $writer->tags } ) {
         exists $cap_tags{$tag}
             and $data->{$path}{ uc $tag } = $cap_tags{$tag};
+    }
+
+    # transformations in code
+    if ( my $sub = $opt->{'transform'} ) {
+        my $source = "
+package Regtag::Value {
+    our \$AUTOLOAD;
+    sub AUTOLOAD {
+        my \$self = shift;
+        my \$func = \$AUTOLOAD;
+        \$func =~ s/.*:://;
+        \$self->{val} = eval \"\$func q{\$self->{val}}\";
+    }
+
+    # just so it doesn't interfere with the AUTOLOAD
+    sub DESTROY {0}
+}
+
+sub {
+    local %_ = map {;
+        \$_ => bless { val => \$c{\$_} }, q{Regtag::Value}
+    } keys %c;
+    $sub;
+    return %_;
+}";
+
+        my $code = eval_closure(
+            source      => $source,
+            environment => {
+                '%c' => {
+                    map { $_ => $cap_tags{$_} } keys %cap_tags
+                },
+            }
+        );
+
+        my %res = $code->();
+
+        foreach my $key ( keys %res ) {
+            $data->{$path}{ uc $key } = $res{$key}{val};
+        }
     }
 }
 
